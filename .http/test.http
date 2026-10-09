@@ -1,0 +1,32 @@
+GET http://localhost:8000/v1/models/index.json HTTP/1.1
+
+###
+GET http://localhost:8000/v1/models/check HTTP/1.1
+
+###
+GET https://3gfz53jt-8000.asse.devtunnels.ms/v1/models/index.json HTTP/1.1
+
+
+###
+POST http://localhost:8000/v1/admin/bundles/import HTTP/1.1
+content-type: application/json
+
+{
+    "source_path": "../../week-1/pipeline-app/build/dist/bundle_v1_quant.zip", 
+    "channel": "beta", 
+    "quantized": true, 
+    "promote": false, 
+    "allow_unsigned": true, 
+    "changelog": ["first beta drop", "seg_lung retrained"]
+}
+
+###
+POST http://localhost:8000/v1/admin/channels/beta/promote HTTP/1.1
+content-type: application/json
+
+{
+    "version": "2026.09.04"
+}
+
+###
+GET http://localhost:8000/v1/models/check?channel=beta&current=2026.01.01&app=1.0.0 HTTP/1.1

@@ -65,6 +65,43 @@ class CheckResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# available models discovery  (GET /v1/models)
+# --------------------------------------------------------------------------- #
+
+class AvailableModelItem(BaseModel):
+    channel: str
+    version: str
+    is_latest: bool
+    is_current: bool = False
+    released_utc: datetime
+    schema_version: int
+    quantized: bool
+    mandatory: bool
+    signature_verified: bool
+    size_bytes: int
+    bundle_zip_sha256: str
+    manifest_sha256: str
+    notes: str | None = None
+    changelog: list[str] = []
+    min_app_version: str
+    app_supported: bool = True
+
+    # download & verification URLs
+    bundle_zip: str
+    manifest_url: str
+    labels_url: str
+    sha256sums_url: str
+    signature_url: str
+    files_base: str
+
+
+class AvailableModelsResponse(BaseModel):
+    total: int
+    channels: list[str]
+    models: list[AvailableModelItem]
+
+
+# --------------------------------------------------------------------------- #
 # admin
 # --------------------------------------------------------------------------- #
 

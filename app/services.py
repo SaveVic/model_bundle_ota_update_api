@@ -152,6 +152,94 @@ def build_check(
 
 
 # --------------------------------------------------------------------------- #
+# available models discovery
+# --------------------------------------------------------------------------- #
+
+def _bundle_descriptor(
+    v: BundleVersion,
+    ch: Channel,
+    *,
+    app_version: str | None = None,
+    current: str | None = None,
+) -> dict:
+    supported = app_supported(app_version, ch.min_app_version)
+    is_latest = (ch.latest_version == v.version)
+    is_current = bool(current and v.version == current.strip())
+    urls = bundle_urls(v.channel, v.version)
+    return {
+        "channel": v.channel,
+        "version": v.version,
+        "is_latest": is_latest,
+        "is_current": is_current,
+        "released_utc": v.released_utc,
+        "schema_version": v.schema_version,
+        "quantized": v.quantized,
+        "mandatory": v.mandatory,
+        "signature_verified": v.signature_verified,
+        "size_bytes": v.size_bytes,
+        "bundle_zip_sha256": v.bundle_zip_sha256,
+        "manifest_sha256": v.manifest_sha256,
+        "notes": v.notes,
+        "changelog": list(v.changelog or []),
+        "min_app_version": ch.min_app_version,
+        "app_supported": supported,
+        **urls,
+    }
+
+
+def list_available_models(
+    db: Session,
+    *,
+    channel: str | None = None,
+    quantized: bool | None = None,
+    app_version: str | None = None,
+    current: str | None = None,
+) -> dict:
+    stmt = (
+        select(BundleVersion, Channel)
+        .join(Channel, BundleVersion.channel == Channel.name)
+        .where(BundleVersion.yanked.is_(False))
+    )
+    if channel:
+        stmt = stmt.where(BundleVersion.channel == channel.strip())
+    if quantized is not None:
+        stmt = stmt.where(BundleVersion.quantized.is_(quantized))
+    stmt = stmt.order_by(BundleVersion.released_utc.desc())
+
+    rows = db.execute(stmt).all()
+    channels_seen: set[str] = set()
+    models = []
+    for ver, ch in rows:
+        channels_seen.add(ch.name)
+        models.append(
+            _bundle_descriptor(ver, ch, app_version=app_version, current=current)
+        )
+
+    return {
+        "total": len(models),
+        "channels": sorted(list(channels_seen)),
+        "models": models,
+    }
+
+
+def get_bundle_descriptor(
+    db: Session,
+    channel: str,
+    version: str,
+    *,
+    app_version: str | None = None,
+    current: str | None = None,
+) -> dict | None:
+    ch = get_channel(db, channel)
+    if ch is None:
+        return None
+    ver = get_version(db, channel, version)
+    if ver is None or ver.yanked:
+        return None
+    return _bundle_descriptor(ver, ch, app_version=app_version, current=current)
+
+
+# --------------------------------------------------------------------------- #
 # promote / rollback
 # --------------------------------------------------------------------------- #
 

@@ -126,6 +126,8 @@ python -m scripts.seed --with-unquant
 
 | Method | Endpoint | Cache Policy | Description |
 |---|---|---|---|
+| `GET` | `/v1/models` | `Cache-Control: 60s` · `ETag` | List all available model bundles across channels (`?channel=&quantized=&app=&current=`). |
+| `GET` | `/v1/models/{ch}/{ver}` | `Cache-Control: 60s` · `ETag` | Specific bundle version descriptor with direct download URLs. |
 | `GET` | `/v1/models/index.json` | `Cache-Control: 60s` · `ETag` | Full release index across all channels. |
 | `GET` | `/v1/models/check` | `Cache-Control: 60s` · `ETag` | Single-query update descriptor (`?channel=&current=&app=`). |
 | `GET` / `HEAD` | `/v1/models/{ch}/{ver}/manifest.json` | `max-age=31536000, immutable` | Pipeline execution graph and tensor wiring. |
@@ -180,13 +182,26 @@ curl.exe -X POST "http://localhost:8000/v1/admin/channels/beta/promote" `
   -d '{"version": "2026.09.04", "mandatory": false}'
 ```
 
-### 3. Check for Updates from Edge Client
+### 3. Browse & Discover All Available Models
+
+```powershell
+# List all available models across both beta and stable tracks
+curl.exe "http://localhost:8000/v1/models"
+
+# Filter by channel and check compatibility with the installed app version
+curl.exe "http://localhost:8000/v1/models?channel=beta&app=1.0.0"
+
+# Fetch descriptor for a specific selected bundle
+curl.exe "http://localhost:8000/v1/models/beta/2026.09.04"
+```
+
+### 4. Check for Updates from Edge Client (Latest Only)
 
 ```powershell
 curl.exe "http://localhost:8000/v1/models/check?channel=beta&current=2026.01.01&app=1.0.0"
 ```
 
-### 4. Resumable Chunked Download (HTTP Range)
+### 5. Resumable Chunked Download (HTTP Range)
 
 ```powershell
 # Download bytes 0 through 1023
@@ -194,7 +209,7 @@ curl.exe -i -r 0-1023 -o part.bin `
   "http://localhost:8000/v1/models/beta/2026.09.04/bundle.zip"
 ```
 
-### 5. Conditional Caching (ETag & 304 Not Modified)
+### 6. Conditional Caching (ETag & 304 Not Modified)
 
 ```powershell
 # First fetch to obtain ETag header
@@ -205,7 +220,7 @@ curl.exe -i -H 'If-None-Match: "<etag-from-previous-response>"' `
   "http://localhost:8000/v1/models/beta/2026.09.04/manifest.json"
 ```
 
-### 6. Emergency Rollback
+### 7. Emergency Rollback
 
 ```powershell
 curl.exe -X POST "http://localhost:8000/v1/admin/channels/beta/rollback"

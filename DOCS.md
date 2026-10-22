@@ -325,6 +325,101 @@ Liveness probe for load balancers and container orchestrators.
 
 ### Catalog & Update Endpoints (Client)
 
+#### `GET /v1/models`
+Returns a flat, structured list of all available (non-yanked) model bundles across channels. Enables edge clients to display a model selection screen, filter by quantization or channel, inspect compatibility, and choose an exact bundle version to download.
+
+- **Alias:** `GET /v1/models/available`
+- **Headers Returned:**
+  - `ETag`: SHA-256 checksum of canonical JSON response body.
+  - `Cache-Control`: `public, max-age={DEMO_API_INDEX_CACHE_SECONDS}`.
+- **Conditional Requests:** Sending matching `If-None-Match` header returns `304 Not Modified`.
+- **Query Parameters:**
+  - `channel` (`string`, optional): Filter results by channel name (e.g., `"stable"` or `"beta"`). If omitted, returns bundles from all channels.
+  - `quantized` (`boolean`, optional): Filter results by quantization status (`true` or `false`).
+  - `app` (`string`, optional): Client application version (e.g., `"1.0.0"`). Evaluates `app_supported` against each channel's `min_app_version`.
+  - `current` (`string`, optional): Currently active bundle version on the client device. Flags matching item with `is_current: true`.
+- **Response `200 OK` Schema:**
+  ```json
+  {
+    "total": 2,
+    "channels": ["beta", "stable"],
+    "models": [
+      {
+        "channel": "stable",
+        "version": "2026.09.04",
+        "is_latest": true,
+        "is_current": false,
+        "released_utc": "2026-09-17T08:45:35.191051Z",
+        "schema_version": 1,
+        "quantized": false,
+        "mandatory": false,
+        "signature_verified": true,
+        "size_bytes": 504123456,
+        "bundle_zip_sha256": "4fa1...89bc",
+        "manifest_sha256": "188c...9ed5",
+        "notes": "seeded unquantized bundle",
+        "changelog": [
+          "Unquantized parity build",
+          "full-precision seg + cnn"
+        ],
+        "min_app_version": "0.0.0",
+        "app_supported": true,
+        "bundle_zip": "http://localhost:8000/v1/models/stable/2026.09.04/bundle.zip",
+        "manifest_url": "http://localhost:8000/v1/models/stable/2026.09.04/manifest.json",
+        "labels_url": "http://localhost:8000/v1/models/stable/2026.09.04/labels.json",
+        "sha256sums_url": "http://localhost:8000/v1/models/stable/2026.09.04/SHA256SUMS",
+        "signature_url": "http://localhost:8000/v1/models/stable/2026.09.04/SHA256SUMS.sig",
+        "files_base": "http://localhost:8000/v1/models/stable/2026.09.04/models/"
+      },
+      {
+        "channel": "beta",
+        "version": "2026.09.04",
+        "is_latest": true,
+        "is_current": false,
+        "released_utc": "2026-09-17T08:27:24.079712Z",
+        "schema_version": 1,
+        "quantized": true,
+        "mandatory": false,
+        "signature_verified": true,
+        "size_bytes": 196853241,
+        "bundle_zip_sha256": "3fa9...41c2",
+        "manifest_sha256": "188c...9ed5",
+        "notes": "seeded quantized bundle",
+        "changelog": [
+          "Initial field bundle",
+          "seg_lung fp16, cnn / seg_lesion int8",
+          "RF: dataset_gabungan active"
+        ],
+        "min_app_version": "0.0.0",
+        "app_supported": true,
+        "bundle_zip": "http://localhost:8000/v1/models/beta/2026.09.04/bundle.zip",
+        "manifest_url": "http://localhost:8000/v1/models/beta/2026.09.04/manifest.json",
+        "labels_url": "http://localhost:8000/v1/models/beta/2026.09.04/labels.json",
+        "sha256sums_url": "http://localhost:8000/v1/models/beta/2026.09.04/SHA256SUMS",
+        "signature_url": "http://localhost:8000/v1/models/beta/2026.09.04/SHA256SUMS.sig",
+        "files_base": "http://localhost:8000/v1/models/beta/2026.09.04/models/"
+      }
+    ]
+  }
+  ```
+
+---
+
+#### `GET /v1/models/{channel}/{version}`
+Retrieves the complete client descriptor for a specific bundle version. Useful when a client selects a model from the discovery list or wants to verify metadata before initiating an update.
+
+- **Path Parameters:**
+  - `channel` (`string`): Channel name (e.g., `"beta"`).
+  - `version` (`string`): Target bundle version (e.g., `"2026.09.04"`).
+- **Query Parameters:**
+  - `app` (`string`, optional): Client app version to evaluate compatibility.
+  - `current` (`string`, optional): Currently active bundle version.
+- **Headers Returned:** `ETag`, `Cache-Control`.
+- **Response `200 OK` Schema:** Returns a single `AvailableModelItem` object.
+- **Response `404 Not Found`:** Returned if the requested channel/version does not exist or has been yanked.
+
+---
+
 #### `GET /v1/models/index.json`
 Returns the complete release catalog across all channels and non-yanked versions.
 

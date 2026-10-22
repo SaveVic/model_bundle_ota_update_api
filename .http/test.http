@@ -1,18 +1,30 @@
+### 1. List all available models across channels
+GET http://localhost:8000/v1/models HTTP/1.1
+
+### 2. List available models filtered by channel
+GET http://localhost:8000/v1/models?channel=beta HTTP/1.1
+
+### 3. List available models filtered by quantization
+GET http://localhost:8000/v1/models?quantized=true HTTP/1.1
+
+### 4. List available models with client app compatibility check
+GET http://localhost:8000/v1/models?app=1.0.0&current=2026.01.01 HTTP/1.1
+
+### 5. Get descriptor for a specific bundle version (beta / 2026.09.04)
+GET http://localhost:8000/v1/models/beta/2026.09.04 HTTP/1.1
+
+### 6. Get release index
 GET http://localhost:8000/v1/models/index.json HTTP/1.1
 
-###
-GET http://localhost:8000/v1/models/check HTTP/1.1
+### 7. One-round-trip update check (latest only)
+GET http://localhost:8000/v1/models/check?channel=beta&current=2026.01.01&app=1.0.0 HTTP/1.1
 
-###
-GET https://3gfz53jt-8000.asse.devtunnels.ms/v1/models/index.json HTTP/1.1
-
-
-###
+### 8. Admin - Import bundle
 POST http://localhost:8000/v1/admin/bundles/import HTTP/1.1
 content-type: application/json
 
 {
-    "source_path": "../../week-1/pipeline-app/build/dist/bundle_v1_quant.zip", 
+    "source_path": "dist/bundle_v1_quant.zip", 
     "channel": "beta", 
     "quantized": true, 
     "promote": false, 
@@ -20,13 +32,10 @@ content-type: application/json
     "changelog": ["first beta drop", "seg_lung retrained"]
 }
 
-###
+### 9. Admin - Promote bundle
 POST http://localhost:8000/v1/admin/channels/beta/promote HTTP/1.1
 content-type: application/json
 
 {
     "version": "2026.09.04"
 }
-
-###
-GET http://localhost:8000/v1/models/check?channel=beta&current=2026.01.01&app=1.0.0 HTTP/1.1
